@@ -1,0 +1,533 @@
+openapi: 3.0.1
+info:
+  title: Vertiq Portfolio Service API
+  version: 1.0.0
+  description: API documentation for Vertiq portfolio microservice (dashboard, holdings, metrics, charts, breakdowns)
+servers:
+  - url: http://localhost:8080/portfolio
+    description: Local server
+paths:
+  /summary:
+    get:
+      tags: [Portfolio]
+      summary: Get portfolio summary (overview + metrics)
+      operationId: getPortfolioSummary
+      parameters:
+        - $ref: "#/components/parameters/user-id"
+      responses:
+        "200":
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioSummary"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /holdings:
+    get:
+      tags: [Holdings]
+      summary: Get all user holdings
+      operationId: getAllHoldings
+      parameters:
+        - $ref: "#/components/parameters/user-id"
+      responses:
+        "200":
+          description: Holdings response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoldingsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /history:
+    get:
+      tags: [Portfolio]
+      summary: Get portfolio value over time
+      operationId: getPortfolioHistory
+      parameters:
+        - name: timeframe
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [month, sixMonths, year, all]
+            default: month
+        - $ref: "#/components/parameters/user-id"
+      responses:
+        "200":
+          description: Portfolio value history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortfolioHistoryEntry"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /asset-breakdown:
+    get:
+      tags: [Portfolio]
+      summary: Get asset class breakdown
+      operationId: getAssetBreakdown
+      parameters:
+        - $ref: "#/components/parameters/user-id"
+      responses:
+        "200":
+          description: Asset breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BreakdownEntry"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /sector-breakdown:
+    get:
+      tags: [Portfolio]
+      summary: Get sector allocation breakdown for all portfolios
+      operationId: getSectorBreakdown
+      parameters:
+        - $ref: "#/components/parameters/user-id"
+      responses:
+        "200":
+          description: Sector breakdown for all portfolios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioSectorBreakdownResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /invested-withdrawn:
+    get:
+      tags: [Portfolio]
+      summary: Get invested vs withdrawn data
+      operationId: getInvestedWithdrawn
+      parameters:
+        - name: timeframe
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [threeMonths, sixMonths, year]
+            default: sixMonths
+        - $ref: "#/components/parameters/user-id"
+      responses:
+        "200":
+          description: Invested vs withdrawn
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InvestedWithdrawnEntry"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /orders:
+    get:
+      tags: [Orders]
+      summary: Get user orders
+      operationId: getOrders
+      parameters:
+        - $ref: "#/components/parameters/user-id"
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /reports:
+    get:
+      tags: [Reports]
+      summary: Get user reports
+      operationId: getReports
+      parameters:
+        - $ref: "#/components/parameters/user-id"
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    user-id:
+      name: user-id
+      in: header
+      description: The ID of the authenticated user, set by the API Gateway
+      required: true
+      schema:
+        type: string
+  schemas:
+    PortfolioSummary:
+      type: object
+      properties:
+        overview:
+          $ref: "#/components/schemas/PortfolioOverview"
+        metrics:
+          $ref: "#/components/schemas/PortfolioMetrics"
+        marketCapData:
+          $ref: "#/components/schemas/MarketCapData"
+      required:
+        - overview
+        - metrics
+        - marketCapData
+
+    PortfolioOverview:
+      type: object
+      properties:
+        currentValue:
+          type: number
+        investedValue:
+          type: number
+        totalReturns:
+          type: number
+        totalReturnsPercent:
+          type: number
+        todaysReturns:
+          type: number
+        todaysReturnsPercent:
+          type: number
+        xirr:
+          type: number
+      required:
+        - currentValue
+        - investedValue
+        - totalReturns
+        - totalReturnsPercent
+        - todaysReturns
+        - todaysReturnsPercent
+        - xirr
+
+    PortfolioMetrics:
+      type: object
+      properties:
+        avgMarketCap:
+          type: number
+        avgPE:
+          type: number
+        priceBook:
+          type: number
+        alpha:
+          type: number
+        beta:
+          type: number
+        industryPe:
+          type: number
+        industryPb:
+          type: number
+        divYield:
+          type: number
+        eps:
+          type: number
+        roe:
+          type: number
+        roce:
+          type: number
+        riskLabel:
+          type: string
+      required:
+        - avgMarketCap
+        - avgPE
+        - priceBook
+        - alpha
+        - beta
+        - industryPe
+        - industryPb
+        - divYield
+        - eps
+        - roe
+        - roce
+        - riskLabel
+
+    MarketCapData:
+      type: object
+      properties:
+        smallcapPercent:
+          type: number
+        midcapPercent:
+          type: number
+        largecapPercent:
+          type: number
+        otherPercent:
+          type: number
+      required:
+        - smallcapPercent
+        - midcapPercent
+        - largecapPercent
+        - otherPercent
+
+    HoldingsResponse:
+      type: object
+      properties:
+        holdings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Holding"
+      required:
+        - holdings
+    Holding:
+      type: object
+      properties:
+        name:
+          type: string
+          example: HDFC Bank
+        symbol:
+          type: string
+          example: HDFCBANK
+        type:
+          type: string
+          example: Stock
+        quantity:
+          type: number
+          example: 100
+        avgPrice:
+          type: number
+          example: 1500.0
+        ltp:
+          type: number
+          example: 1720.5
+        dayPnl:
+          type: number
+          example: 500
+        dayPercent:
+          type: number
+          example: 0.5
+        overallPnl:
+          type: number
+          example: 22050
+        overallPercent:
+          type: number
+          example: 14.7
+        currentValue:
+          type: number
+          example: 172050
+        investedValue:
+          type: number
+          example: 172050
+
+    PortfolioHistoryEntry:
+      type: object
+      properties:
+        date:
+          type: string
+          example: "2024-05-01"
+        desktop:
+          type: number
+          example: 200000
+        mobile:
+          type: number
+          example: 150000
+      required:
+        - date
+        - desktop
+        - mobile
+
+    HighLow:
+      type: object
+      properties:
+        high:
+          $ref: "#/components/schemas/MetricValue"
+        low:
+          $ref: "#/components/schemas/MetricValue"
+      required:
+        - high
+        - low
+
+    MetricValue:
+      type: object
+      properties:
+        value:
+          type: string
+          example: "₹1,350,000"
+        date:
+          type: string
+          example: "2024-05-01"
+      required:
+        - value
+        - date
+
+    BreakdownEntry:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Stocks
+        value:
+          type: number
+          example: 520000
+      required:
+        - name
+        - value
+
+    InvestedWithdrawnEntry:
+      type: object
+      properties:
+        month:
+          type: string
+          example: January
+        invested:
+          type: number
+          example: 186
+        withdrawn:
+          type: number
+          example: 80
+      required:
+        - month
+        - invested
+        - withdrawn
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          example: ORD123
+        type:
+          type: string
+          example: BUY
+        symbol:
+          type: string
+          example: HDFCBANK
+        qty:
+          type: integer
+          example: 10
+        price:
+          type: number
+          example: 1500.0
+        status:
+          type: string
+          example: COMPLETED
+        date:
+          type: string
+          example: "2024-05-01"
+      required:
+        - id
+        - type
+        - symbol
+        - qty
+        - price
+        - status
+        - date
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+          example: RPT123
+        name:
+          type: string
+          example: Portfolio Summary
+        url:
+          type: string
+          example: https://example.com/reports/123
+        createdAt:
+          type: string
+          example: "2024-05-01"
+      required:
+        - id
+        - name
+        - url
+        - createdAt
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: Invalid input data
+        status:
+          type: integer
+          example: 400
+      required:
+        - error
+        - message
+        - status
+
+    SectorData:
+      type: object
+      properties:
+        portfolioId:
+          type: string
+        sectors:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectorBreakdownEntry"
+      required:
+        - portfolioId
+        - sectors
+
+    SectorBreakdownEntry:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+        percent:
+          type: number
+      required:
+        - name
+        - value
+        - percent
+
+    PortfolioSectorBreakdownResponse:
+      type: object
+      properties:
+        sectorData:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectorData"
+      required:
+        - sectorData
